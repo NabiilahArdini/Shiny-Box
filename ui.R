@@ -4,12 +4,17 @@ navbarPage("Shiny-Box",
            tabPanel("Home", 
                     imageOutput("myImage", width = "100%", height = "100%"),
                     fluidPage(br(),
-                              "more text here")),
+                              h3("<ON DEVELOPMENT>"),
+                              "Shiny-Box is a personal project that bundles up 
+                              frequently asked (and more advanced) shiny features in a box.", 
+                              br(),
+                              "This is an example of Navigation Bar and 
+                              adding image to enhance a Shiny home page.")
+                    ),
                     
-           tabPanel("Description",
+           tabPanel("Interactive Leaflet",
                     fluidPage(  
-                            "This is an example of Navigation Bar 
-                            for Shiny and adding image to enhance a Shiny home page."
+                            "More text here"
                             )
                     )
           )
