@@ -1,6 +1,6 @@
 # Shiny-Box
 
-<ON DEVELOPMENT>
+-ON DEVELOPMENT-
 
 Collection of frequently asked (and more advanced) shiny features in a box.
 
