@@ -1,0 +1,336 @@
+---
+title: "Shiny-Box Development"
+author: "Nabiilah Ardini Fauziyyah"
+output:
+  html_document:
+    theme: united
+    highlight: tango
+    toc: true
+    toc_float:
+      collapsed: false
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+# clear-up the environment
+rm(list = ls())
+
+# chunk options
+knitr::opts_chunk$set(
+  message = FALSE,
+  warning = FALSE,
+  fig.align = "center",
+  comment = "#>"
+)
+```
+
+<style>
+body {
+text-align: justify}
+</style>
+
+# Introduction
+
+Shiny-Box is a Shiny application made with the purpose of demonstrating various use of shiny features that are frequently asked by students/users but rarely discussed in a beginner or formal class environment. With an example app and its code, Shiny-Box hopefully will ease you understanding on the mechanism of various more engaging Shiny features.
+
+# Table of Content
+
+This article will summarize the main topics which are available in Shiny-Box:
+
+* Data Preparation
+* Navigation Bar and Layouts in Shiny
+* Displaying Image in Shiny
+* ...
+
+# {.tabset}
+
+##  Data Preparation
+
+### Online Retail Dataset
+
+To have a more in-depth demonstration, we will use an Online Retail II Dataset downloaded from [UCI Machine Learning](https://archive.ics.uci.edu/ml/datasets/Online+Retail+II). The dataset contains all the transactions occurring for a UK-based and registered, non-store online retail between December 1st, 2009 and December 9th, 2011. The company mainly sells unique all-occasion gift-ware. Many customers of the company are wholesalers. 
+
+The dataset was already cleaned for its missing values, gone through some feature engineering such as adding information regarding the status of purchase and longitude and latitude data from each country in which each customer resides. 
+
+```{r}
+library(readr)
+library(dplyr)
+
+retail <- read_csv("data/online_retail.csv")
+glimpse(retail)
+```
+
+These are the description for each column:
+
+* **invoice**: Invoice number. A 6-digit integral number uniquely assigned to each transaction. If this code starts with letter 'c', it indicates a cancellation.
+* **stock_code**: Product (item) code. A 5-digit integral number uniquely assigned to each distinct product.
+* **description**: Product (item) name.
+* **quantity**: The quantities of each product (item) per transaction.
+* **invoice_date**: Invoice Date and time. The day and time when each transaction was generated.
+* **price**: Unit price. Product price per unit in sterling.
+* **country**: Country name. The name of the country where each customer resides.
+* **lon, lat**: Longitude and Latitude of each country.
+* **status**: Status of purchase; purchased or cancelled.
+
+Below are codes for data cleaning and some feature engineering:
+
+```{r}
+retail_clean <- retail %>% 
+  mutate(country = as.factor(country),
+         status = as.factor(status),
+         sales = quantity*price)
+
+head(retail_clean,3)
+```
+
+### Plot Preparation
+
+Library:
+
+```{r}
+# data wrangling
+library(lubridate)
+library(stringr)
+library(glue)
+
+# data visualization
+library(ggplot2)
+library(plotly)
+
+```
+
+Overview of Data
+
+```{r}
+# total item
+scales::comma(sum(retail_clean$quantity))
+
+# unique puchases
+scales::comma(length(unique(retail_clean$invoice)))
+
+# total sales
+scales::comma(sum(retail_clean$sales))
+
+# countries reached
+scales::comma(length(unique(retail_clean$country)))
+```
+
+Reactive Data:
+
+```{r}
+# prepare data
+trend_data <- retail_clean %>% 
+  filter(status %in% c("Purchased","Cancelled"),
+         invoice_date >= min(invoice_date) & invoice_date <= max(invoice_date)) %>% 
+  mutate(invoice_dt = floor_date(invoice_date, unit = "week"))
+```
+
+Selected Data:
+
+```{r}
+# total item
+scales::comma(sum(trend_data$quantity))
+
+# unique puchases
+scales::comma(length(unique(trend_data$invoice)))
+
+# total sales
+scales::comma(sum(trend_data$sales))
+
+# countries reached
+scales::comma(length(unique(trend_data$country)))
+```
+
+Plot 1: Trend of Purchased Item
+
+```{r}
+# data
+trend_dat1 <- trend_data %>% 
+  group_by(invoice_dt) %>% 
+  summarise(n_purchase = n()) %>% 
+  mutate(text = glue("Date: {invoice_dt}
+                     Number of Purchase: {n_purchase}")
+         )
+
+# visualize
+trend_line <- trend_dat1 %>% 
+  ggplot(aes(x = invoice_dt, y = n_purchase)) + 
+  geom_line(lwd = 0.5) + 
+  geom_point(aes(text = text), color = "#65c6f4", size = 3) + 
+  scale_y_continuous(labels = scales::unit_format(scale = 0.001, 
+                                                  unit = "K", accuracy = 1)) +
+  labs(x = NULL, 
+       y = NULL,
+       title = paste0("number of purchase per ", "week") %>% str_to_title(),
+       subtitle = paste("From", min(retail_clean$invoice_dt), 
+                        "to", max(retail_clean$invoice_dt))) +
+  theme_minimal()
+
+
+ggplotly(trend_line, tooltip = "text")
+```
+
+Plot 2: Most Purchased item during certain time
+
+```{r}
+# data
+trend_dat2 <- trend_data %>% 
+  group_by(stock_code, description) %>% 
+  summarise(n_purchase = sum(quantity)) %>%
+  mutate(n_purchase = abs(n_purchase)) %>%
+  arrange(desc(n_purchase)) %>% 
+  head(10) %>% 
+  mutate(text = glue("{description}
+                      Stock Code: {stock_code}
+                      Number of puchase: {n_purchase}")
+         ) 
+  
+# visualize
+trend_col <- trend_dat2 %>% 
+  ggplot(aes(x = n_purchase, y = reorder(stock_code, n_purchase), text = text)) + 
+  geom_col(aes(fill = n_purchase), show.legend = F) +
+  scale_fill_gradient(low = "#ffd700", high = "#65c6f4") +
+  labs(x = "Number of Purchase", y = "Stock Code", 
+       title = paste0("Top 10 Most ", "Purchased", " Items")) + 
+  theme_minimal()
+
+ggplotly(trend_col, tooltip = "text")
+```
+
+Table 1: Purchasing Countries
+
+```{r}
+trend_data %>% 
+  filter(description == "ROTATING SILVER ANGELS T-LIGHT HLDR") %>% 
+  group_by(country) %>% 
+  summarise(quantity = sum(quantity)) %>%
+  ungroup() %>% 
+  mutate(prop_purchase = paste(round(quantity/sum(quantity)*100,2),"%")) %>% 
+  arrange(desc(quantity)) %>% 
+  rename(Country = country,
+         Quantity = quantity,
+         Proportion = prop_purchase)
+```
+
+Full Data:
+
+```{r}
+full_table <- retail_clean %>% 
+  select(1:4,6,11,everything(), -c(lon,lat)) %>% 
+  rename(product = description)
+
+names (full_table) <- names(full_table) %>% 
+  str_replace_all("_", " ") %>% 
+  str_to_title()
+
+head(full_table)
+```
+
+Leaflet: Mapping of Purchases per Countries
+
+Data:
+
+```{r}
+leaf_data <- retail_clean %>% 
+  filter(status == "Purchased") %>% 
+  group_by(country, lon, lat, description) %>% 
+  summarise(quantity = sum(quantity)) %>% 
+  ungroup()
+```
+
+Countries Reached
+
+```{r}
+# leaflet
+leaf_mapping <- leaf_data %>% 
+  group_by(country, lon, lat) %>% 
+  summarise(quantity = sum(quantity)) %>% 
+  arrange(desc(quantity)) %>%
+  ungroup() %>% 
+  mutate(rel_quan = case_when(quantity < 1000 ~ 4,
+                              quantity < 10000 ~ 8,
+                              quantity < 100000 ~ 16,
+                              quantity < 1000000 ~ 32,
+                              quantity > 1000000 ~ 64))
+```
+
+```{r}
+library(leaflet)
+
+m <- leaflet(leaf_mapping) %>%
+  addProviderTiles(providers$Esri.WorldStreetMap) %>%  
+  addCircleMarkers(lng = ~lon, lat = ~lat, label = ~country, 
+                   radius = ~rel_quan, color = "teal")
+
+m
+```
+
+Item Purchased per Countries
+
+```{r}
+leaf_pop <- leaf_data %>%
+  mutate(total_q = sum(quantity)) %>% 
+  group_by(country) %>%
+  mutate(con_contrib = round(sum(quantity)/total_q*100,2),
+         prop_purchase = round(quantity/sum(quantity)*100,2)) %>% 
+  arrange(desc(quantity)) %>% 
+  slice_head(n = 5) %>% 
+  select(country, description, quantity, prop_purchase, con_contrib, lon, lat) %>% 
+  ungroup()
+```
+
+Top 5 Product:
+
+```{r}
+# plot
+leaf_pop1 <- leaf_pop %>% 
+  filter(lon == 136.189000, lat == -24.97300) %>% 
+  mutate(text = glue("{description}
+                     Number of Purchase: {quantity}
+                     Proportion: {prop_purchase}% of total country purchase "))
+
+pop_col <- leaf_pop1 %>% 
+  ggplot(aes(x = c(1:5), y = quantity, text = text)) + 
+  geom_col(aes(fill = quantity), show.legend = F) +
+  scale_fill_gradient(low = "#ffd700", high = "#65c6f4") +
+  labs(x = NULL, y = "Number of Purchase", 
+       title = paste0("Top 5 Most Purchased Items")) + 
+  theme_minimal()
+
+ggplotly(pop_col, tooltip = "text")
+``` 
+Gauge of Country Contribution:
+
+```{r}
+leaf_pop %>% 
+  filter(lon == 136.189000, lat == -24.97300) %>% 
+  head(1) %>% pull(con_contrib)
+```
+
+## The Basic
+
+### Layouting
+
+A great thing we can do with Shiny is to play with layouts. Quick reference on Shiny layouts are available on the second page of Shiny Cheatsheet on the right side of the page. You can combine multiple layouts, layer by layer, just like what we do in Shiny-Box.
+
+image navbar vs code
+
+## Add Images
+
+write here...
+
+### Write Tidy Paragraphs 
+
+Shiny can also embeded with HTML tags
+
+### Add header icon 
+
+write here
+
+### 
+
+
+
+
+
+
