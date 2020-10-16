@@ -1,5 +1,5 @@
 library(shiny)
-library(shinydashboard)
+library(DT)
 
 # data wrangling
 library(readr)

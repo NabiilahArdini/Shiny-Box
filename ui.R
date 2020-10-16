@@ -36,43 +36,59 @@ navbarPage("Shiny-Box",
            navbarMenu("Examples",
                       tabPanel("Sales Overview",
                       
-                      fluidPage(column(width = 12,
-                                       p("a text here.."))),         
-                      sidebarLayout(
-                        sidebarPanel(width = 3,
+                      fluidPage(
+                        column(width = 12,
+                               h1("Sales Overview of Online Purchases"),
+                               br()
+                               )
+                        ),         
+                      fluidPage(
+                        sidebarPanel(width = 4,
+                                     p("The chart on the right presents the trend of 
+                                     purchases made from online platform. You can provide inputs for analysis."),
                                      dateRangeInput("date", label = "Range of Time:",
                                                     min = min(retail_clean$invoice_date), 
                                                     max = max(retail_clean$invoice_date),
                                                     start = min(retail_clean$invoice_date),
                                                     end = max(retail_clean$invoice_date)),
-                                     selectInput("status", label = "Status of Purchase:",
+                                     selectizeInput("status", label = "Status of Purchase:",
                                                  choices = unique(retail_clean$status),
                                                  selected = "Purchased", 
                                                  multiple = T),
                                      selectInput("floor_date", label = "Round your time:",
                                                  choices = c("hour", "day", "week", "month"),
                                                  selected = "week"),
-                                     actionButton("action1", label = "Submit")
+                                     p("Click the button below for further analyis on 
+                                     the product being sold during the period."),
+                                     br(),
+                                     actionButton("action1", "Product Analysis"),
                                      ),
-                        mainPanel(
-                          column(plotlyOutput("trend_line"), width = 6),
-                          column(width = 3,
-                                    valueBoxOutput("total_item"),
-                                    valueBoxOutput("unique_purchases"),
-                                    valueBoxOutput("total_sales"),
-                                    valueBoxOutput("countries_reached"))
-                                 )),
-                          fluidPage(
-                            column(width = 6),
-                            column(width = 6,
-                                   # reactive input
-                                   # selectInput("product", label = "Choose Product:",
-                                   #             choices = unique(retail_clean$description),
-                                   #             selected = "15CM CHRISTMAS GLASS BALL 20 LIGHTS")
-                                   
-                                   # dataTableOutput("purchasing_con")
+                        column(plotlyOutput("trend_line", height = "350px"), width = 8),
+                        column(width = 2,
+                               h2(strong(textOutput("total_item"))),
+                               h5("Total Item Purchased")),
+                        column(width = 2,
+                               h2(strong(textOutput("unique_purchases"))),
+                               h5("Total Unique Purchases")),
+                        column(width = 2,
+                               h2(strong(textOutput("total_sales"))),
+                               h5("Total Sales")),
+                        column(width = 2,
+                               h2(strong(textOutput("countries_reached"))),
+                               h5("Countries Reached"))
+                                 ),
+                      fluidPage(
+                        column(width = 6,
+                                   plotlyOutput("trend_col", height = "600px")),
+                        column(width = 6,
+                                   uiOutput("ui_text"),
+                                   uiOutput("ui_product"),
+                                   uiOutput("ui_button"),
+                                   br(),
+                                   dataTableOutput("trend_table")
                                    )
-                                )
+                                ),
+                      hr()
                                ),
                       tabPanel("Interactive Map")
                     

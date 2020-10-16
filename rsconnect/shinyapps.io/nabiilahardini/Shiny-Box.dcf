@@ -5,9 +5,9 @@ account: nabiilahardini
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 2532134
-bundleId: 3744626
+bundleId: 3747891
 url: https://nabiilahardini.shinyapps.io/Shiny-Box/
-when: 1602760406.41657
+when: 1602832246.07257
 asMultiple: FALSE
 asStatic: FALSE
-ignoredFiles: preview.PNG|README.md|shiny-dev.Rmd|ui3.R|data/country_longlat.csv|data/online_retail.csv|data/online_retail_II.xlsx|www/shinybox-logo.png
+ignoredFiles: app.R|preview.PNG|README.md|shiny-dev.Rmd|ui3.R|wrangling.Rmd|www/shinybox-logo.png
