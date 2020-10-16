@@ -6,8 +6,10 @@ function(input, output, session) {
              width = "100%"
              )
     }, deleteFile = F)
-   
-# ----------------------------------------------- REACTIVE
+
+# ----------------------------------------------- TAB 1
+    
+    # prepare data tab 1
     
     trend_data <- reactive({
       
@@ -21,6 +23,8 @@ function(input, output, session) {
         mutate(invoice_dt = floor_date(invoice_date, unit = input$floor_date))
       
     })
+    
+    # outputs tab 1
     
     output$total_item <- renderText({
       
@@ -75,6 +79,10 @@ function(input, output, session) {
       
       })
     
+# ----------------------------------------------- REACTIVE TO 'PRODUCT ANALYSIS'
+    
+    # prepare data
+    
     trend_data2 <- eventReactive(input$action1, {
       
       trend_data() %>% 
@@ -90,8 +98,12 @@ function(input, output, session) {
       
     })
     
+    # outputs
+    
     observeEvent(input$action1, {
     
+    # plotly
+      
     output$trend_col <- renderPlotly({
       
       trend_col <- trend_data2() %>% 
@@ -106,12 +118,16 @@ function(input, output, session) {
       
     })
     
+    # add description
+    
     output$ui_text <- renderUI({
     
       p("The table below shows each country purchases from", strong("All Product"),
-        "You can choose a product to display its country purchase distribution:")
+        ". You can choose a product to display its country purchase distribution:")
     
       })
+    
+    # selectInput based on previous inputs
     
     output$ui_product <- renderUI({
       
@@ -123,11 +139,15 @@ function(input, output, session) {
       
     })
     
+    # add submit button
+    
     output$ui_button <- renderUI({
       
       actionButton("action2", label = "Submit")
     
     })
+    
+    # table
     
     output$trend_table <- renderDataTable(
       
@@ -145,20 +165,25 @@ function(input, output, session) {
     )
     
     })
+
+# ----------------------------------------------- REACTIVE TO 'SUBMIT'
     
     observeEvent(input$action2, {
       
-      # add reset
+      # add reset button
+      
       insertUI(
         selector = "#action2",
         where = "afterEnd",
         ui <- actionButton("action3", label = "Reset to All Product")
       )
       
-      # clear ui
+      # clear submit button
+      
       removeUI("#action2")
       
-      # add table
+      # update table
+      
       output$trend_table <- renderDataTable({
         
         trend_data() %>% 
@@ -177,19 +202,24 @@ function(input, output, session) {
       
     })
     
+# ----------------------------------------------- REACTIVE TO 'RESET'
+    
     observeEvent(input$action3, {
       
-      # clear ui
+      # clear reset
+      
       removeUI("#action3")
       
-      # add ui
+      # add submit button (again)
+      
       output$ui_button <- renderUI({
         
         actionButton("action2", label = "Submit")
         
       })
       
-      # table
+      # reset to original table 
+      
       output$trend_table <- renderDataTable(
           
           trend_data() %>% 
@@ -205,9 +235,114 @@ function(input, output, session) {
           
         ) 
     
-    
       }, ignoreInit = TRUE)
+
+# ----------------------------------------------- TAB 2    
     
+    # map
+    
+    output$map <- renderLeaflet(
+      
+      leaflet(leaf_mapping) %>%
+        addProviderTiles(providers$Esri.WorldStreetMap) %>%  
+        addCircleMarkers(lng = ~lon, lat = ~lat, label = ~country, 
+                         radius = ~rel_quan, color = "teal")
+    
+    )
+
+    # gauge 
+    
+    renderGauge(
+      
+      div_id = "gauge", rate = 0, gauge_name = "Contribution"
+      
+    )
+    
+    # plotly
+    
+    output$top10_con <- renderPlotly({
+      
+      dat <- data.frame(x = c(1:10),
+                 y = c(1:100))
+      
+      click_col <- ggplot(data = dat, aes(x = x, y = y)) + 
+        scale_x_continuous(breaks = seq(1,10,1)) +
+        labs(x = NULL, y = NULL, 
+             title = paste0("Please Choose Country")) + 
+        theme_minimal()
+      
+      ggplotly(click_col)
+      
+    })
+    
+    
+# ----------------------------------------------- REACTIVE TO LEAFLET CLICK
+
+    # prepare data
+    
+    temp <- eventReactive(input$map_marker_click, {
+      
+      leaf_click %>% 
+        filter(lon == input$map_marker_click$lng, lat == input$map_marker_click$lat) %>% 
+        mutate(text = glue("{description}
+                     Number of Purchase: {quantity}
+                     Proportion: {prop_purchase}% of total country purchase "))
+      
+    })
+    
+    # outputs
+    
+    observeEvent(input$map_marker_click,{
+      
+      # update gauge
+      
+      temp_dat <- temp() 
+      value <- temp_dat[1, "con_contrib"]
+      
+      renderGauge(
+        
+        div_id = "gauge", rate = value, gauge_name = "Contribution"
+        
+      )
+      
+      # update plotly
+      
+      output$top10_con <- renderPlotly({
+        
+        click_col <- temp() %>% 
+          ggplot(aes(x = c(1:10), y = quantity, text = text)) + 
+          geom_col(aes(fill = quantity), show.legend = F) + 
+          scale_fill_gradient(low = "#ffd700", high = "#65c6f4") +
+          scale_y_continuous(labels = scales::comma) + 
+          scale_x_continuous(breaks = seq(1,10,1)) +
+          labs(x = NULL, y = NULL, 
+               title = paste0("Top 10 Most Purchased Items")) + 
+          theme_minimal()
+        
+        ggplotly(click_col, tooltip = "text")
+        
+      })
+      
+      # table (scrollable, costumized page length)
+      
+      output$con_product <- DT::renderDataTable({
+        
+        dat <- leaf_data %>%
+          filter(lon == input$map_marker_click$lng, lat == input$map_marker_click$lat) %>%
+          mutate(prop_purchase = paste(round(quantity/sum(quantity)*100,2), "%")) %>% 
+          arrange(desc(quantity)) %>% 
+          select(description, quantity, prop_purchase) %>%
+          rename(Product = description,
+                 'Number of Purchase'= quantity,
+                 'Proportion of Purchase' = prop_purchase) %>% 
+          ungroup()
+        
+        DT::datatable(dat, options = list(lengthMenu = c(5, 10, 15), 
+                                          pageLength = 5, scrollX = T))
+        
+      })
+      
+    })
       
 }
 
