@@ -1,0 +1,41 @@
+---
+title: "Wrangling"
+author: "Nabiilah Ardini Fauziyyah"
+date: "15/10/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Wrangling
+
+```{r}
+longlat <- read.csv("data/country_longlat.csv")
+```
+
+```{r}
+retail <- readxl::read_excel("data/online_retail_II.xlsx")
+```
+```{r}
+library(dplyr)
+library(lubridate)
+library(stringr)
+```
+
+```{r}
+retail_full <- retail %>% 
+  
+  # wrangling
+  janitor::clean_names() %>% 
+  left_join(longlat, by = "country") %>% 
+  select(-customer_id) %>% 
+  filter(complete.cases(.)) %>% 
+  
+  # feature engineering
+  mutate(status = ifelse(str_detect(invoice, "C"), "Cancelled", "Purchased"))
+
+# write.csv(retail_full, "data/online_retail.csv", row.names = F)
+```
+
