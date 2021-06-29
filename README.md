@@ -2,7 +2,7 @@
 
 Collection of frequently asked (and more advanced) shiny features in a box.
 
-Shiny Link: https://nabiilahardini.shinyapps.io/Shiny-Box
+Shiny Link ver 1: https://nabiilahardini.shinyapps.io/Shiny-Box
 
 Shiny Link ver 2: https://nardini.shinyapps.io/shinybox/ (Tutorial available)
 
