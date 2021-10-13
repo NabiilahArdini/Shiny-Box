@@ -8,8 +8,8 @@ Shiny Link ver 2: https://nardini.shinyapps.io/shinybox/ (Tutorial available)
 
 Tutorials (Shiny Link ver 2):
 
-* [Advancing Your Shiny App: UI Appearance](https://algotech.netlify.app/blog/advancing-your-shinyapp/)
-* [Advancing Your Shiny App II: Reactive Elements](https://algotech.netlify.app/blog/advancing-your-shinyapp-ii/)
+* [Advancing Your Shiny App: Prettify your User Interface (UI)](https://algotech.netlify.app/blog/advancing-your-shinyapp/)
+* [Advancing Your Shiny App II: Understanding Reactive Elements](https://algotech.netlify.app/blog/advancing-your-shinyapp-ii/)
 
 ## Changelog:
 
