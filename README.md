@@ -2,7 +2,7 @@
 
 Demo for collection of frequently asked (and more advanced) shiny features in a box.
 
-Shiny Link ver 1: https://nabiilahardini.shinyapps.io/Shiny-Box
+Shiny Link ver 1: https://nabiilahardini.shinyapps.io/Shiny-Box (Source code in repo > code_shinybox_ver1)
 
 Shiny Link ver 2: https://nardini.shinyapps.io/shinybox/ (Tutorial available)
 
